@@ -12,7 +12,7 @@ const emails=require('../mail/emails.js');
 const HOST=process.env.HOST;
 
 const router=express.Router();
-mongoose.connect('mongodb://mongo:27017/game', {useNewUrlParser: true}).then(()=>{
+mongoose.connect(`mongodb://${process.env.MONGOHOST}:27017/game`, {useNewUrlParser: true}).then(()=>{
     console.log('connected')
 }).catch((error)=>{
     console.error(error)
