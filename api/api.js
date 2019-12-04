@@ -9,7 +9,7 @@ const bcrypt=require('bcrypt');
 const mailService=require('../mail/mailService.js');
 const uniqid=require('uniqid');
 const emails=require('../mail/emails.js');
-
+const HOST=process.env.HOST;
 
 const router=express.Router();
 mongoose.connect('mongodb://mongo:27017/game', {useNewUrlParser: true}).then(()=>{
@@ -104,7 +104,7 @@ router.get('/confirm/:key/:email',(req, res)=>{
                 res.status(409)
                 return res.send({message: 'something went wrong'})
             }
-            return res.send('succesfully confirmed your email you can now log in <a href=http://localhost:3000/login>http://localhost:3000/login</a>');
+            return res.send(`succesfully confirmed your email you can now log in <a href=${HOST}/account/login>${HOST}/account/login</a>`);
         })
     })
 })
