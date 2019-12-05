@@ -1,4 +1,5 @@
 const express=require('express');
+require('dotenv').config();
 const mongoose=require('mongoose');
 const session=require('express-session');
 const cookieParser=require('cookie-parser');
@@ -10,7 +11,6 @@ const mailService=require('../mail/mailService.js');
 const uniqid=require('uniqid');
 const emails=require('../mail/emails.js');
 const HOST=process.env.HOST;
-
 const router=express.Router();
 mongoose.connect(`mongodb://${process.env.MONGOHOST}:27017/game`, {useNewUrlParser: true}).then(()=>{
     console.log('connected')
