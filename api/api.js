@@ -59,7 +59,7 @@ router.post('/signup',(req, res)=>{
             })
             createdUser.save().then(data=>{
                 mailService(data.email, emails.emailConfirmMail(data.email, data.email_confirm_key));
-                return res.send({message: `confirmation mail sent to ${data.email}`, sendAgainPath: `confirmagain/${data.send_again_key}`})
+                return res.send({message: `confirmation mail sent to ${data.email}`, sendAgainPath: `${data.send_again_key}`})
             }).catch(error=>{
                 res.status(409);
                 return res.send({message: 'user already exists'})
