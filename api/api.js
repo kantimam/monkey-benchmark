@@ -12,7 +12,7 @@ const uniqid=require('uniqid');
 const emails=require('../mail/emails.js');
 const HOST=process.env.HOST;
 const router=express.Router();
-mongoose.connect(`mongodb://${process.env.MONGOHOST}:27017/game`, {useNewUrlParser: true}).then(()=>{
+mongoose.connect(`mongodb://${process.env.MONGOHOST}:27017/game`, {useNewUrlParser: true, useUnifiedTopology: true}).then(()=>{
     console.log('connected')
 }).catch((error)=>{
     console.error(error)
@@ -62,7 +62,7 @@ router.post('/signup',(req, res)=>{
                 return res.send({message: `confirmation mail sent to ${data.email}`, sendAgainPath: `${data.send_again_key}`})
             }).catch(error=>{
                 res.status(409);
-                return res.send({message: 'user already exists'})
+                return res.send({message: 'could not create user. most likely a user with this email or name already exists'})
             })
         });
     }else{

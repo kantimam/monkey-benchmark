@@ -41,7 +41,8 @@ const UserSchema=new mongoose.Schema({
     },
     reset_password_key:{
         type: String,
-        unique: true
+        unique: true,
+        sparse: true
     }
 })
 
