@@ -12,6 +12,11 @@ const app=express();
     origin: 'http://localhost:3000'
 })); */
 
+
+if(!process.env.MAIL_ADRESS || !process.env.MAIL_PASSWORD){
+    throw new Error("MAIL_ADRESS and MAIL_PASSWORD need to be set in your env variables");
+}
+
 //Static file declaration
 app.use(express.static(path.join(__dirname, 'client/build')));
 

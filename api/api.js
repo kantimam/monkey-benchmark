@@ -1,20 +1,23 @@
-const express=require('express');
+const express = require('express');
 require('dotenv').config();
-const mongoose=require('mongoose');
-const session=require('express-session');
-const cookieParser=require('cookie-parser');
-const MongoStore=require('connect-mongo')(session);
-const formidable=require('express-formidable');
-const bcrypt=require('bcrypt');
+const mongoose = require('mongoose');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+const MongoStore = require('connect-mongo')(session);
+const formidable = require('express-formidable');
+const bcrypt = require('bcrypt');
 /* const cors=require('cors'); */
-const mailService=require('../mail/mailService.js');
-const uniqid=require('uniqid');
-const emails=require('../mail/emails.js');
-const HOST=process.env.HOST;
-const router=express.Router();
-mongoose.connect(`mongodb://${process.env.MONGOHOST}:27017/game`, {useNewUrlParser: true, useUnifiedTopology: true}).then(()=>{
+const mailService = require('../mail/mailService.js');
+const uniqid = require('uniqid');
+const emails = require('../mail/emails.js');
+const HOST = process.env.HOST;
+const router = express.Router();
+mongoose.connect(`mongodb://${process.env.MONGOHOST}:27017/game`, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
     console.log('connected')
-}).catch((error)=>{
+}).catch((error) => {
     console.error(error)
 });
 
@@ -31,25 +34,30 @@ router.use(session({
     saveUninitialized: true,
     maxAge: 7200000,
     httpOnly: false,
-    cookie: {maxAge: 7200000, httpOnly: false},
+    cookie: {
+        maxAge: 7200000,
+        httpOnly: false
+    },
     store: new MongoStore({
         mongooseConnection: mongoose.connection,
         maxAge: 7200000
     })
 }))
 
-const User=require('../schemas/UserSchema');
+const User = require('../schemas/UserSchema');
 
-router.post('/signup',(req, res)=>{
-    const saltRounds=10;
-    if(req.fields.email && req.fields.password && req.fields.userName){
-        bcrypt.hash(req.fields.password, saltRounds, function(error, hash) {
-            if(error){
+router.post('/signup', (req, res) => {
+    const saltRounds = 10;
+    if (req.fields.email && req.fields.password && req.fields.userName) {
+        bcrypt.hash(req.fields.password, saltRounds, function (error, hash) {
+            if (error) {
                 res.status(409)
-                res.send({message: 'password failed'})
+                res.send({
+                    message: 'password failed'
+                })
                 return
             }
-            const createdUser=new User({
+            const createdUser = new User({
                 email: req.fields.email,
                 password: hash,
                 name: req.fields.userName,
@@ -57,52 +65,85 @@ router.post('/signup',(req, res)=>{
                 email_confirm_key: uniqid(),
                 send_again_key: uniqid()
             })
-            createdUser.save().then(data=>{
-                mailService(data.email, emails.emailConfirmMail(data.email, data.email_confirm_key));
-                return res.send({message: `confirmation mail sent to ${data.email}`, sendAgainPath: `${data.send_again_key}`})
-            }).catch(error=>{
+            createdUser.save().then(async (data) => {
+                try {
+                    await mailService(data.email, emails.emailConfirmMail(data.email, data.email_confirm_key));
+                    return res.send({
+                        message: `confirmation mail sent to ${data.email}`,
+                        sendAgainPath: `${data.send_again_key}`
+                    })
+                } catch {
+                    return res.status(500).send("could not send mail");
+                }
+            }).catch(_error => {
                 res.status(409);
-                return res.send({message: 'could not create user. most likely a user with this email or name already exists'})
+                return res.send({
+                    message: 'could not create user. most likely a user with this email or name already exists'
+                })
             })
         });
-    }else{
+    } else {
         res.status(409)
-        return res.send({message: 'form not valid'})
+        return res.send({
+            message: 'form not valid'
+        })
     }
 
 })
 
-router.get('/confirmagain/:key',(req, res)=>{
-    User.findOne({send_again_key: req.params.key},(error, data)=>{
-        if(error){
+router.get('/confirmagain/:key', (req, res) => {
+    User.findOne({
+        send_again_key: req.params.key
+    }, async (error, data) => {
+        if (error) {
             res.status(409)
-            return res.send({message: 'something went wrong'})
+            return res.send({
+                message: 'something went wrong'
+            })
         }
-        if(!data){
+        if (!data) {
             res.status(404)
-            return res.send({message: 'please log in to send another key'})
+            return res.send({
+                message: 'please log in to send another key'
+            })
         }
-        mailService(data.email, emails.emailConfirmMail(data.email, data.email_confirm_key));
-        return res.send({message: `email confirm key sent to: ${data.email}`})
+        try {
+            await mailService(data.email, emails.emailConfirmMail(data.email, data.email_confirm_key));
+            return res.send({
+                message: `email confirm key sent to: ${data.email}`
+            })
+        }
+        catch{
+            res.status(500).send("could not send mail");
+        }
     })
 })
 
 
-router.get('/confirm/:key/:email',(req, res)=>{
-    User.findOne({email_confirm_key: req.params.key, email: req.params.email},(error, data)=>{
-        if(error){
+router.get('/confirm/:key/:email', (req, res) => {
+    User.findOne({
+        email_confirm_key: req.params.key,
+        email: req.params.email
+    }, (error, data) => {
+        if (error) {
             res.status(409)
-            return res.send({message: 'something went wrong'})
+            return res.send({
+                message: 'something went wrong'
+            })
         }
-        if(!data){
+        if (!data) {
             res.status(404)
-            return res.send({message: 'key does not seem to match this email'})
+            return res.send({
+                message: 'key does not seem to match this email'
+            })
         }
-        data.active=true;
-        data.save(error=>{
-            if(error){
+        data.active = true;
+        data.save(error => {
+            if (error) {
                 res.status(409)
-                return res.send({message: 'something went wrong'})
+                return res.send({
+                    message: 'something went wrong'
+                })
             }
             return res.send(`succesfully confirmed your email you can now log in <a href=${HOST}/account/login>${HOST}/account/login</a>`);
         })
@@ -111,191 +152,289 @@ router.get('/confirm/:key/:email',(req, res)=>{
 
 
 
-router.post('/createnewpassword',(req, res)=>{
-    if(req.fields.email && req.fields.key && req.fields.password){
-        const saltRounds=10;
-        User.findOne({email: req.fields.email}
-            ).then((data)=>{
-                if(!data) return res.send({message: "no user with this email found"}, 404);
-                if(data.reset_password_key===req.fields.key){
-                    bcrypt.hash(req.fields.password, saltRounds, function(error, hash) {
-                        if(error){
-                            return res.send({message: 'password failed'}, 409)
+router.post('/createnewpassword', (req, res) => {
+    if (req.fields.email && req.fields.key && req.fields.password) {
+        const saltRounds = 10;
+        User.findOne({
+            email: req.fields.email
+        }).then((data) => {
+            if (!data) return res.send({
+                message: "no user with this email found"
+            }, 404);
+            if (data.reset_password_key === req.fields.key) {
+                bcrypt.hash(req.fields.password, saltRounds, function (error, hash) {
+                    if (error) {
+                        return res.send({
+                            message: 'password failed'
+                        }, 409)
+                    }
+                    data.password = hash;
+                    data.reset_password_key = uniqid();
+                    data.save(error => {
+                        if (error) {
+                            return res.send({
+                                message: 'something went wrong'
+                            }, 500)
                         }
-                        data.password=hash;
-                        data.reset_password_key=uniqid();
-                        data.save(error=>{
-                            if(error){
-                                return res.send({message: 'something went wrong'},500)
-                            }
-                            return res.send(`password succesfully reset`);
-                        })
-                    });
-                    
-                }else{
-                    res.send({message: 'please request a new key to reset your password'})
-                }                 
-            })
-    }else{
-        res.send({message: 'your request seems to be missing some fields'})
-    } 
-    
-    
+                        return res.send(`password succesfully reset`);
+                    })
+                });
+
+            } else {
+                res.send({
+                    message: 'please request a new key to reset your password'
+                })
+            }
+        })
+    } else {
+        res.send({
+            message: 'your request seems to be missing some fields'
+        })
+    }
+
+
 })
 
-router.post('/resetpassword',(req, res)=>{
-    const email=req.fields.email;
-    User.findOne({email: email}
-    ).then((data)=>{
-        if(!data) return res.send({message: "no user with this email found"}, 404);
-        data.reset_password_key=uniqid();
-        data.save(error=>{
-            if(error){
+router.post('/resetpassword', (req, res) => {
+    const email = req.fields.email;
+    User.findOne({
+        email: email
+    }).then((data) => {
+        if (!data) return res.send({
+            message: "no user with this email found"
+        }, 404);
+        data.reset_password_key = uniqid();
+        data.save(async (error) => {
+            if (error) {
                 res.status(500)
-                return res.send({message: 'something went wrong'})
+                return res.send({
+                    message: 'something went wrong'
+                })
             }
-            mailService(data.email, emails.resetPasswordMail(data.email, data.reset_password_key));
-            return res.send(`sent password reset link to ${data.email}`);
+            try {
+                await mailService(data.email, emails.resetPasswordMail(data.email, data.reset_password_key));
+                return res.send(`sent password reset link to ${data.email}`);
+            } catch {
+                return res.status(500).send(`failed to send mail`);
+            }
+
         })
     })
 })
 
 
 
-router.post('/login',(req, res)=>{
-    if(req.fields.email && req.fields.password){
-        User.findOne({email: req.fields.email},(error, data)=>{
-            if(error){
+router.post('/login', (req, res) => {
+    if (req.fields.email && req.fields.password) {
+        User.findOne({
+            email: req.fields.email
+        }, (error, data) => {
+            if (error) {
                 res.status(409)
-                return res.send({message: 'something went wrong'})
+                return res.send({
+                    message: 'something went wrong'
+                })
             }
-            if(!data){
+            if (!data) {
                 res.status(404)
-                return res.send({message: 'no user with this combination of email and password found'})
+                return res.send({
+                    message: 'no user with this combination of email and password found'
+                })
             }
-            bcrypt.compare(req.fields.password, data.password, (error, pwdMatches)=>{
-                if(pwdMatches){
+            bcrypt.compare(req.fields.password, data.password, async (_error, pwdMatches) => {
+                if (pwdMatches) {
                     /* SUCCES */
-                    if(data.active){
-                        req.session.email=req.fields.email;
-                        const mySession=req.session;
+                    if (data.active) {
+                        req.session.email = req.fields.email;
+                        const mySession = req.session;
                         /* console.log(mySession); */
-                        const {name, email, scores}=data;
-                        return res.send({user: {name, email, scores}, message: 'succesfully logged in'})
-                    }else{
-                        mailService(data.email, emails.emailConfirmMail(data.email, data.email_confirm_key));
-                        res.status(403)
-                        return res.send({message: `email confirm key sent to: ${data.email}`})
+                        const {
+                            name,
+                            email,
+                            scores
+                        } = data;
+                        return res.send({
+                            user: {
+                                name,
+                                email,
+                                scores
+                            },
+                            message: 'succesfully logged in'
+                        })
+                    } else {
+                        /* try sending corfirmation mail */
+                        try {
+                            await mailService(data.email, emails.emailConfirmMail(data.email, data.email_confirm_key));
+                            res.status(403)
+                            return res.send({
+                                message: `email confirm key sent to: ${data.email}`
+                            })
+                        } catch (error) {
+                            /* console.log(error) */
+                            return res.status(500).send({
+                                message: `failed to send mail to: ${data.email}`
+                            })
+                        }
                     }
-                    
+
                 }
                 /* console.log(error) */
                 res.status(404)
-                return res.send({message: 'no user with this combination of email and password found'})
-                
+                return res.send({
+                    message: 'no user with this combination of email and password found'
+                })
+
             })
 
         })
-    }else{
+    } else {
         res.status(409)
-        res.send({message: 'fields missing'})
+        res.send({
+            message: 'fields missing'
+        })
     }
 })
 
-router.get('/logout',(req, res)=>{
-    req.session.destroy((error)=>{
-        if(error){
-            return res.send({message: 'could not delete your session... logged you out anyway'})
+router.get('/testmail', async (req, res) => {
+    try {
+        await mailService("kantemir.imam@gmail.com", emails.emailConfirmMail("kantemir.imam@gmail.com", "passed"));
+        /* console.log(data); */
+        res.send("succes");
+    } catch (error) {
+        /* console.log(error); */
+        res.status(500).send("failed");
+    }
+})
+
+router.get('/logout', (req, res) => {
+    req.session.destroy((error) => {
+        if (error) {
+            return res.send({
+                message: 'could not delete your session... logged you out anyway'
+            })
         }
-        return res.send({message: 'succesfully logged out'})
+        return res.send({
+            message: 'succesfully logged out'
+        })
     })
 })
 
-router.get('/user/:name',(req, res)=>{
-    if(req.params.name){
-        User.find({name: req.params.name},(error, data)=>{
-            if(error){
+router.get('/user/:name', (req, res) => {
+    if (req.params.name) {
+        User.find({
+            name: req.params.name
+        }, (error, data) => {
+            if (error) {
                 /* console.error(error) */
                 res.send(error)
-            } 
+            }
             /* console.log(data) */
             res.send(data)
         })
-    }else{
+    } else {
         res.send('something went wrong')
     }
 
 })
 
-router.post('/setscore',(req, res)=>{
-    if(req.session.email && User.schema.obj.scores.hasOwnProperty(req.fields.game)){
-        const updateObject={[`scores.${req.fields.game}`]: req.fields.score}
-        User.update({email: req.session.email}, {$set: updateObject},(error, data)=>{
-            if(error){
-                res.status(404);
-                return res.send({message: 'user not found'})
+router.post('/setscore', (req, res) => {
+    if (req.session.email && User.schema.obj.scores.hasOwnProperty(req.fields.game)) {
+        const updateObject = {
+            [`scores.${req.fields.game}`]: req.fields.score
+        }
+        User.update({
+            email: req.session.email
+        }, {
+            $set: updateObject
+        }, (error, data) => {
+            if (error) {
+                return res.status(404).send({
+                    message: 'user not found'
+                })
             }
-            return res.send({message: 'succes', session: req.session, userData: data})
+            return res.send({
+                message: 'succes',
+                session: req.session,
+                userData: data
+            })
         })
-    }
-    else{
+    } else {
         res.status(400);
-        return res.send({message: 'you dont seem to have an active session please login'})
+        return res.send({
+            message: 'you dont seem to have an active session please login'
+        })
     }
 
 })
 
 
 /* every 20 seconds update the scoreStats object with new data from the database */
-let scoreStats={
+let scoreStats = {
     word: {},
     reaction: {},
     number: {}
 };
-(function createRandomNum(){
-    setTimeout(()=>{
+(function createRandomNum() {
+    setTimeout(() => {
         getScoreStats()
         createRandomNum()
-    },20000);
+    }, 20000);
 })()
 
 
-function getScoreStats(){
-    let highScoreObject={
+function getScoreStats() {
+    let highScoreObject = {
         word: {},
         reaction: {},
         number: {}
     };
 
-    User.find({},'scores').then(data=>{
-        for(let i=0;i<data.length;i++){
-            const scores=data[i].scores;
+    User.find({}, 'scores').then(data => {
+        for (let i = 0; i < data.length; i++) {
+            const scores = data[i].scores;
 
             /* count the score distribution  in the database*/
-            highScoreObject.word[scores.word]=(highScoreObject.word[scores.word] || 0) + 1;
+            highScoreObject.word[scores.word] = (highScoreObject.word[scores.word] || 0) + 1;
 
-            highScoreObject.reaction[scores.reaction]=(highScoreObject.reaction[scores.reaction] || 0) + 1;
+            highScoreObject.reaction[scores.reaction] = (highScoreObject.reaction[scores.reaction] || 0) + 1;
 
-            highScoreObject.number[scores.number]=(highScoreObject.number[scores.number] || 0) + 1;
+            highScoreObject.number[scores.number] = (highScoreObject.number[scores.number] || 0) + 1;
         }
-        scoreStats=highScoreObject
+        scoreStats = highScoreObject
     })
 
 }
 
-router.get('/getuser',(req, res)=>{
-    const session=req.session.email;
-    if(session){
-        User.find({email: session},(error, data)=>{
-            if(error) return res.send({message: "user not found"},404);
+router.get('/getuser', (req, res) => {
+    const session = req.session.email;
+    if (session) {
+        User.find({
+            email: session
+        }, (error, data) => {
+            if (error) return res.send({
+                message: "user not found"
+            }, 404);
 
-            if(data){
-                const {name, email, scores}=data;
-                return res.send({user: {name, email, scores}, message: 'succes'})
+            if (data) {
+                const {
+                    name,
+                    email,
+                    scores
+                } = data;
+                return res.send({
+                    user: {
+                        name,
+                        email,
+                        scores
+                    },
+                    message: 'succes'
+                })
             }
         })
     }
-    res.send({message: "please log in"},403);
+    res.send({
+        message: "please log in"
+    }, 403);
 })
 
 
@@ -303,12 +442,12 @@ router.get('/getuser',(req, res)=>{
 
 
 
-router.get('/getstats/:game',(req, res)=>{
+router.get('/getstats/:game', (req, res) => {
     req.session.touch();
     /* console.dir(req.session.id)
     console.dir(req.cookies) */
-    const game=req.params.game;
-    switch(game){
+    const game = req.params.game;
+    switch (game) {
         case 'word':
             res.send(scoreStats.word)
             break
@@ -320,7 +459,9 @@ router.get('/getstats/:game',(req, res)=>{
             break
         default:
             res.status(404)
-            res.send({message: 'unknown parameter... try one of these word, number or reaction'})
+            res.send({
+                message: 'unknown parameter... try one of these word, number or reaction'
+            })
     }
 })
 
@@ -328,4 +469,4 @@ router.get('/getstats/:game',(req, res)=>{
 
 
 
-module.exports=router;
+module.exports = router;
