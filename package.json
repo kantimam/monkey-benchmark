@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js",
-    "startWithEnv": "node -r dotenv/config app.js", 
+    "startWithEnv": "node -r dotenv/config app.js",
     "sudoStart": "sudo node app.js",
     "deploy": "sudo forever start app.js"
   },
