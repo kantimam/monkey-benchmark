@@ -42,7 +42,6 @@ app.get('/randomwords', (req, res) => {
             i++;
         }
     }
-    console.log(out);
     res.send(Array.from(out));
 })
 
