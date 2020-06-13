@@ -1,9 +1,9 @@
 {
   "static/js/0.45825bb3.chunk.js": "./static/js/0.45825bb3.chunk.js",
   "static/js/0.45825bb3.chunk.js.map": "./static/js/0.45825bb3.chunk.js.map",
-  "main.css": "./static/css/main.479bb2ff.chunk.css",
-  "main.js": "./static/js/main.49ca1363.chunk.js",
-  "main.js.map": "./static/js/main.49ca1363.chunk.js.map",
+  "main.css": "./static/css/main.7ec82de9.chunk.css",
+  "main.js": "./static/js/main.d36b712b.chunk.js",
+  "main.js.map": "./static/js/main.d36b712b.chunk.js.map",
   "static/css/2.464b0a5c.chunk.css": "./static/css/2.464b0a5c.chunk.css",
   "static/js/2.615c6802.chunk.js": "./static/js/2.615c6802.chunk.js",
   "static/js/2.615c6802.chunk.js.map": "./static/js/2.615c6802.chunk.js.map",
@@ -35,12 +35,12 @@
   "runtime~main.js": "./static/js/runtime~main.9fba4d32.js",
   "runtime~main.js.map": "./static/js/runtime~main.9fba4d32.js.map",
   "static/media/brainLogo.svg": "./static/media/brainLogo.8e02dfbf.svg",
-  "static/css/main.479bb2ff.chunk.css.map": "./static/css/main.479bb2ff.chunk.css.map",
+  "static/css/main.7ec82de9.chunk.css.map": "./static/css/main.7ec82de9.chunk.css.map",
   "static/css/2.464b0a5c.chunk.css.map": "./static/css/2.464b0a5c.chunk.css.map",
   "static/css/10.bb774648.chunk.css.map": "./static/css/10.bb774648.chunk.css.map",
   "static/css/11.ee2fc3cc.chunk.css.map": "./static/css/11.ee2fc3cc.chunk.css.map",
   "static/css/12.eb0680ef.chunk.css.map": "./static/css/12.eb0680ef.chunk.css.map",
   "index.html": "./index.html",
-  "precache-manifest.f029d64ce3964e96910faf4a10892f81.js": "./precache-manifest.f029d64ce3964e96910faf4a10892f81.js",
+  "precache-manifest.9cd8fd4b5c938fde10a3df3991bb2e2c.js": "./precache-manifest.9cd8fd4b5c938fde10a3df3991bb2e2c.js",
   "service-worker.js": "./service-worker.js"
 }
